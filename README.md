@@ -95,10 +95,6 @@ Environment variables in `agent-py/.env.local` (see `.env.example`).
 - ✅ Change-stream message bus with reconnection handling
 - ✅ Console-mode voice round-trip proven
 
-## Built by
-
-[Rajith Remo](https://github.com/) — Imperial College London, MSc Innovation & Entrepreneurship.
-
 ## Licence
 
 MIT (see `LICENSE`).

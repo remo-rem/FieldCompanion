@@ -1,77 +1,58 @@
 'use client';
 
-import { useTheme } from 'next-themes';
-import { AnimatePresence, motion } from 'motion/react';
+import { useState } from 'react';
 import { useSessionContext } from '@livekit/components-react';
-import type { AppConfig } from '@/app-config';
-import { AgentSessionView_01 } from '@/components/agents-ui/blocks/agent-session-view-01';
-import { WelcomeView } from '@/components/app/welcome-view';
+import { CallView } from '@/components/app/views/call-view';
+import { DashboardView } from '@/components/app/views/dashboard-view';
+import { PrepView } from '@/components/app/views/prep-view';
+import { WrapView } from '@/components/app/views/wrap-view';
+import { setTokenRequest } from '@/lib/token-request';
 
-const MotionWelcomeView = motion.create(WelcomeView);
-const MotionSessionView = motion.create(AgentSessionView_01);
+type View = 'dashboard' | 'prep' | 'call' | 'wrap';
+type Mode = 'pre_call' | 'in_call' | 'post_call';
 
-const VIEW_MOTION_PROPS = {
-  variants: {
-    visible: {
-      opacity: 1,
-    },
-    hidden: {
-      opacity: 0,
-    },
-  },
-  initial: 'hidden',
-  animate: 'visible',
-  exit: 'hidden',
-  transition: {
-    duration: 0.5,
-    ease: 'linear',
-  },
-};
+export function ViewController() {
+  const [view, setView] = useState<View>('dashboard');
+  const [sessionId, setSessionId] = useState<string>(() => `session_${Date.now()}`);
+  const { isConnected, start, end } = useSessionContext();
 
-interface ViewControllerProps {
-  appConfig: AppConfig;
-}
+  const startMode = async (mode: Mode) => {
+    if (isConnected) {
+      await end();
+    }
+    setTokenRequest({ mode, hcp_id: 'hcp_rose', session_id: sessionId });
+    await start();
+  };
 
-export function ViewController({ appConfig }: ViewControllerProps) {
-  const { isConnected, start } = useSessionContext();
-  const { resolvedTheme } = useTheme();
+  const goToPrep = async () => {
+    setView('prep');
+    await startMode('pre_call');
+  };
+
+  const goToCall = async () => {
+    setView('call');
+    await startMode('in_call');
+  };
+
+  const goToWrap = async () => {
+    setView('wrap');
+    await startMode('post_call');
+  };
+
+  const goToDashboard = async () => {
+    if (isConnected) {
+      await end();
+    }
+    setSessionId(`session_${Date.now()}`);
+    setView('dashboard');
+  };
 
   return (
-    <AnimatePresence mode="wait">
-      {/* Welcome view */}
-      {!isConnected && (
-        <MotionWelcomeView
-          key="welcome"
-          {...VIEW_MOTION_PROPS}
-          startButtonText={appConfig.startButtonText}
-          onStartCall={start}
-        />
-      )}
-      {/* Session view */}
-      {isConnected && (
-        <MotionSessionView
-          key="session-view"
-          {...VIEW_MOTION_PROPS}
-          supportsChatInput={appConfig.supportsChatInput}
-          supportsVideoInput={appConfig.supportsVideoInput}
-          supportsScreenShare={appConfig.supportsScreenShare}
-          isPreConnectBufferEnabled={appConfig.isPreConnectBufferEnabled}
-          audioVisualizerType={appConfig.audioVisualizerType}
-          audioVisualizerColor={
-            resolvedTheme === 'dark'
-              ? appConfig.audioVisualizerColorDark
-              : appConfig.audioVisualizerColor
-          }
-          audioVisualizerColorShift={appConfig.audioVisualizerColorShift}
-          audioVisualizerBarCount={appConfig.audioVisualizerBarCount}
-          audioVisualizerGridRowCount={appConfig.audioVisualizerGridRowCount}
-          audioVisualizerGridColumnCount={appConfig.audioVisualizerGridColumnCount}
-          audioVisualizerRadialBarCount={appConfig.audioVisualizerRadialBarCount}
-          audioVisualizerRadialRadius={appConfig.audioVisualizerRadialRadius}
-          audioVisualizerWaveLineWidth={appConfig.audioVisualizerWaveLineWidth}
-          className="fixed inset-0"
-        />
-      )}
-    </AnimatePresence>
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      {view === 'dashboard' && <DashboardView onStartPrep={goToPrep} />}
+      {view === 'prep' && <PrepView sessionId={sessionId} onStartCall={goToCall} />}
+      {view === 'call' && <CallView sessionId={sessionId} onEndCall={goToWrap} />}
+      {view === 'wrap' && <WrapView sessionId={sessionId} onApprove={goToDashboard} />}
+    </div>
   );
 }

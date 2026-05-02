@@ -7,25 +7,25 @@ type ConnectionDetails = {
   roomName: string;
   participantName: string;
   participantToken: string;
+  sessionId: string;
 };
 
-// NOTE: you are expected to define the following environment variables in `.env.local`:
 const API_KEY = process.env.LIVEKIT_API_KEY;
 const API_SECRET = process.env.LIVEKIT_API_SECRET;
 const LIVEKIT_URL = process.env.LIVEKIT_URL;
-const AGENT_NAME = process.env.AGENT_NAME;
+const AGENT_NAME = process.env.AGENT_NAME || 'my-agent';
 
-// Anonymous identity cookie. In production, replace the cookie read below with
-// a real session lookup (NextAuth, Clerk, Supabase, etc.) and fall through to
-// the anonymous cookie only for guest users.
 const COOKIE_NAME = 'lk_mongo_user_cookie';
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
-const DEFAULT_TENANT_ID = 'default';
-
-// don't cache the results
 export const revalidate = 0;
+
+type TokenRequestBody = {
+  mode?: 'pre_call' | 'in_call' | 'post_call';
+  hcp_id?: string;
+  session_id?: string;
+};
 
 export async function POST(req: NextRequest) {
   if (process.env.NODE_ENV !== 'development') {
@@ -35,40 +35,36 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    if (LIVEKIT_URL === undefined) {
-      throw new Error('LIVEKIT_URL is not defined');
-    }
-    if (API_KEY === undefined) {
-      throw new Error('LIVEKIT_API_KEY is not defined');
-    }
-    if (API_SECRET === undefined) {
-      throw new Error('LIVEKIT_API_SECRET is not defined');
-    }
+    if (!LIVEKIT_URL) throw new Error('LIVEKIT_URL is not defined');
+    if (!API_KEY) throw new Error('LIVEKIT_API_KEY is not defined');
+    if (!API_SECRET) throw new Error('LIVEKIT_API_SECRET is not defined');
 
-    // Resolve the user id server-side. The cookie is httpOnly so JavaScript on
-    // the page cannot read or forge it. We mint one on first visit and set it
-    // on the response below.
+    const body = (await req.json().catch(() => ({}))) as TokenRequestBody;
+    const mode = body.mode ?? 'pre_call';
+    const hcpId = body.hcp_id ?? 'hcp_rose';
+    const sessionId = body.session_id ?? `session_${Date.now()}_${Math.floor(Math.random() * 10_000)}`;
+
     let userId = req.cookies.get(COOKIE_NAME)?.value;
     const isNewCookie = !userId;
     if (!userId) {
       userId = crypto.randomUUID();
     }
 
-    // Stamp the verified user id onto the agent dispatch entry. The metadata
-    // string lands in ctx.job.metadata on the agent before ctx.connect(), which
-    // is where preload_user reads it. We build roomConfig here rather than
-    // trust body.room_config so the server is the sole authority for identity.
-    const metadata = JSON.stringify({ user_id: userId, tenant_id: DEFAULT_TENANT_ID });
-    const roomConfig = AGENT_NAME
-      ? new RoomConfiguration({
-          agents: [new RoomAgentDispatch({ agentName: AGENT_NAME, metadata })],
-        })
-      : new RoomConfiguration();
+    const metadata = JSON.stringify({
+      user_id: userId,
+      tenant_id: 'default',
+      mode,
+      hcp_id: hcpId,
+      session_id: sessionId,
+    });
 
-    // Generate participant token
-    const participantName = 'user';
-    const participantIdentity = `voice_assistant_user_${Math.floor(Math.random() * 10_000)}`;
-    const roomName = `voice_assistant_room_${Math.floor(Math.random() * 10_000)}`;
+    const roomConfig = new RoomConfiguration({
+      agents: [new RoomAgentDispatch({ agentName: AGENT_NAME, metadata })],
+    });
+
+    const participantName = 'rep';
+    const participantIdentity = `rep_${Math.floor(Math.random() * 10_000)}`;
+    const roomName = `${sessionId}_${mode}`;
 
     const participantToken = await createParticipantToken(
       { identity: participantIdentity, name: participantName },
@@ -81,6 +77,7 @@ export async function POST(req: NextRequest) {
       roomName,
       participantName,
       participantToken,
+      sessionId,
     };
     const res = NextResponse.json(data);
     res.headers.set('Cache-Control', 'no-store');
@@ -121,10 +118,8 @@ function createParticipantToken(
     canSubscribe: true,
   };
   at.addGrant(grant);
-
   if (roomConfig) {
     at.roomConfig = roomConfig;
   }
-
   return at.toJwt();
 }

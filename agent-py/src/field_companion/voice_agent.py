@@ -25,17 +25,14 @@ from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
 from . import constants
 from .main import start_background_agents
-from .workspace import Workspace, _new_id, _now
+from .workspace import Workspace
 
 ENV_PATH = Path(__file__).resolve().parents[3] / "agent-py" / ".env.local"
 load_dotenv(ENV_PATH)
 
 log = logging.getLogger("field_companion.voice_agent")
 
-DEFAULT_REP_ID = "rep_demo"
 DEFAULT_HCP_ID = "hcp_rose"
-DEFAULT_MODE = constants.CALL_MODE_PRE
-
 WAIT_FOR_RESULT_TIMEOUT_S = 25
 
 
@@ -43,7 +40,9 @@ def _now_utc() -> datetime:
     return datetime.now(tz=timezone.utc)
 
 
-class PreCallAgent(Agent):
+class FieldCompanionAgent(Agent):
+    """One agent, three demo beats. Tool selection driven by what the rep says."""
+
     def __init__(
         self,
         *,
@@ -51,38 +50,55 @@ class PreCallAgent(Agent):
         workspace: Workspace,
         session_id: str,
         hcp_id: str,
+        mode: str,
     ) -> None:
         super().__init__(
             chat_ctx=chat_ctx,
             instructions=(
-                "You are Field Companion, a voice assistant for a UK pharma "
-                "sales rep about to walk into a call with an oncologist. The "
-                "rep has tapped to begin prep. Greet them briefly, then call "
-                "the dispatch_brief tool to fetch the prep brief. While the "
-                "tool is running, stay quiet — the tool itself returns the "
-                "spoken brief content. After the tool returns, deliver the "
-                "brief in a calm, concise voice. Do not invent facts. Do not "
-                "use markdown, lists, or emojis. Plain spoken English only."
+                "You are Field Companion, a voice assistant for a UK pharma sales rep. "
+                "The rep is preparing for a face-to-face call with Dr Eleanor Rose, "
+                "consultant medical oncologist at Royal Marsden Sutton. The medicine in "
+                "scope is Lymvora.\n\n"
+                "You decide which tool to call based on what the rep says:\n"
+                "1. If the rep asks you to prep, brief, or summarise before the call "
+                "(e.g. 'prep me', 'brief me', 'what should I know'), call the get_brief tool. "
+                "Then deliver the brief in calm spoken English.\n"
+                "2. If the rep tells you something the doctor said during the call "
+                "(e.g. 'she said...', 'the doctor mentioned...', 'I just heard her say...'), "
+                "call the flag_utterance tool with the exact words. Acknowledge briefly "
+                "after the tool returns, but keep it short.\n"
+                "3. If the rep asks to wrap up, finalise, or end the call (e.g. 'wrap this up', "
+                "'end the call', 'write the note'), call the wrap_call tool. Then speak the "
+                "three action items in plain English.\n\n"
+                "Speak plainly. No markdown. No lists. Keep responses concise."
             ),
         )
         self._workspace = workspace
         self._session_id = session_id
         self._hcp_id = hcp_id
+        self._mode = mode
 
     async def on_enter(self) -> None:
-        await self.session.generate_reply(
-            instructions=(
-                "Briefly say you're prepping the call, then immediately call "
-                "the dispatch_brief tool. One short sentence before the tool, "
-                "no more."
+        if self._mode == "pre_call":
+            await self.session.generate_reply(
+                instructions=(
+                    "Greet the rep briefly, then immediately call the get_brief tool "
+                    "and speak the brief in calm spoken English. Keep the greeting to "
+                    "one short sentence such as 'Pulling your brief now.'"
+                )
             )
-        )
+        elif self._mode == "post_call":
+            await self.session.generate_reply(
+                instructions=(
+                    "Immediately call the wrap_call tool to finalise the call. "
+                    "When it returns, speak the three action items in plain spoken English. "
+                    "Do not greet the rep — just deliver the wrap."
+                )
+            )
 
     @function_tool()
-    async def dispatch_brief(self, context: RunContext) -> str:
-        """Request the prep brief for the upcoming call. Returns the brief text to speak."""
-        log.info("dispatch_brief called for session=%s hcp=%s", self._session_id, self._hcp_id)
-
+    async def get_brief(self, context: RunContext) -> str:
+        """Fetch the pre-call brief for Dr Rose. Call when the rep asks to be prepped, briefed, or summarised before the call."""
         await self._workspace.emit(
             constants.WS_BRIEF_REQUEST,
             self._session_id,
@@ -90,101 +106,79 @@ class PreCallAgent(Agent):
             hcp_id=self._hcp_id,
         )
 
-        async def _wait_for_result() -> dict[str, Any]:
+        async def _wait() -> dict[str, Any]:
             async for doc in self._workspace.watch(
-                constants.WS_BRIEF_RESULT,
-                session_id=self._session_id,
+                constants.WS_BRIEF_RESULT, session_id=self._session_id
             ):
                 return doc
 
         try:
-            doc = await asyncio.wait_for(_wait_for_result(), timeout=WAIT_FOR_RESULT_TIMEOUT_S)
+            doc = await asyncio.wait_for(_wait(), timeout=WAIT_FOR_RESULT_TIMEOUT_S)
         except asyncio.TimeoutError:
-            log.warning("brief timed out for session=%s", self._session_id)
-            return (
-                "I couldn't pull the brief in time. Open the prep view on screen "
-                "and you'll see what we have so far."
-            )
+            return "I couldn't pull the brief in time."
 
-        payload = doc.get("payload", {})
-        headline = payload.get("headline", "")
-        last = payload.get("last_interaction_summary", "")
-        opener = payload.get("recommended_opener", "")
-        concerns = payload.get("key_concerns", [])
-        concerns_text = "; ".join(concerns[:3]) if concerns else ""
-
-        spoken = " ".join(
-            part for part in [
-                headline,
-                last,
-                f"Her main concerns going in: {concerns_text}." if concerns_text else "",
-                f"Suggested opener: {opener}" if opener else "",
-            ] if part
-        )
-        return spoken or "Brief is ready on screen."
-
-
-class DuringCallAgent(Agent):
-    def __init__(
-        self,
-        *,
-        chat_ctx: ChatContext,
-        workspace: Workspace,
-        session_id: str,
-        hcp_id: str,
-    ) -> None:
-        super().__init__(
-            chat_ctx=chat_ctx,
-            instructions=(
-                "You are a silent notetaker. Do not speak. Do not interrupt. "
-                "Do not respond to anything. Your only job is to listen. "
-                "Never call any tool."
-            ),
-        )
-        self._workspace = workspace
-        self._session_id = session_id
-        self._hcp_id = hcp_id
-
-    async def on_enter(self) -> None:
-        log.info("during_call mode entered for session=%s", self._session_id)
-
-
-class PostCallAgent(Agent):
-    def __init__(
-        self,
-        *,
-        chat_ctx: ChatContext,
-        workspace: Workspace,
-        session_id: str,
-        hcp_id: str,
-    ) -> None:
-        super().__init__(
-            chat_ctx=chat_ctx,
-            instructions=(
-                "You are Field Companion wrapping up the call. The rep has "
-                "tapped end. Briefly say you're writing up the note, then "
-                "call dispatch_finalize. After the tool returns, speak a "
-                "concise summary of the action items only — no preamble, no "
-                "small talk. Plain spoken English."
-            ),
-        )
-        self._workspace = workspace
-        self._session_id = session_id
-        self._hcp_id = hcp_id
-
-    async def on_enter(self) -> None:
-        await self.session.generate_reply(
-            instructions=(
-                "One short sentence saying you're writing the note, then "
-                "immediately call dispatch_finalize."
-            )
-        )
+        p = doc.get("payload", {})
+        parts = [
+            p.get("headline", ""),
+            p.get("last_interaction_summary", ""),
+        ]
+        concerns = p.get("key_concerns", [])
+        if concerns:
+            parts.append("Her main concerns: " + "; ".join(concerns[:3]) + ".")
+        opener = p.get("recommended_opener", "")
+        if opener:
+            parts.append("Suggested opener: " + opener)
+        return " ".join(part for part in parts if part)
 
     @function_tool()
-    async def dispatch_finalize(self, context: RunContext) -> str:
-        """Request the post-call wrap. Returns the action-item summary to speak."""
-        log.info("dispatch_finalize called for session=%s", self._session_id)
+    async def flag_utterance(self, context: RunContext, utterance: str) -> str:
+        """Flag what the doctor said for safety or compliance review. Pass the exact words the doctor used."""
+        msg_id = "ws_" + os.urandom(6).hex()
+        await self._workspace.db[constants.COLL_AGENT_WORKSPACE].insert_one({
+            "_id": msg_id,
+            "type": constants.WS_UTTERANCE,
+            "session_id": self._session_id,
+            "hcp_id": self._hcp_id,
+            "payload": {
+                "speaker": constants.UTTERANCE_SPEAKER_HCP,
+                "text": utterance,
+                "hcp_id": self._hcp_id,
+            },
+            "created_at": _now_utc(),
+        })
 
+        await self._workspace.db[constants.COLL_CALL_SESSIONS].update_one(
+            {"_id": self._session_id},
+            {
+                "$push": {"utterances": {"speaker": "hcp", "text": utterance}},
+                "$setOnInsert": {
+                    "_id": self._session_id,
+                    "hcp_id": self._hcp_id,
+                    "rep_id": "rep_demo",
+                    "status": "in_progress",
+                },
+            },
+            upsert=True,
+        )
+
+        await asyncio.sleep(2)
+
+        safety = await self._workspace.db[constants.COLL_SAFETY_REPORTS].find_one(
+            {"session_id": self._session_id, "trigger_text": utterance}
+        )
+        compliance = await self._workspace.db[constants.COLL_COMPLIANCE_FLAGS].find_one(
+            {"session_id": self._session_id, "trigger_text": utterance}
+        )
+
+        if safety:
+            return "Safety flag captured. Adverse event with hospital outcome logged."
+        if compliance:
+            return "Compliance flag captured. Off-label discussion logged."
+        return "Captured. Nothing flagged."
+
+    @function_tool()
+    async def wrap_call(self, context: RunContext) -> str:
+        """Wrap up the call. Call when the rep asks to finalise, end the call, or write the note."""
         await self._workspace.emit(
             constants.WS_FINALIZE_CALL,
             self._session_id,
@@ -192,48 +186,24 @@ class PostCallAgent(Agent):
             hcp_id=self._hcp_id,
         )
 
-        async def _wait_for_result() -> dict[str, Any]:
+        async def _wait() -> dict[str, Any]:
             async for doc in self._workspace.watch(
-                constants.WS_FINALIZE_RESULT,
-                session_id=self._session_id,
+                constants.WS_FINALIZE_RESULT, session_id=self._session_id
             ):
                 return doc
 
         try:
-            doc = await asyncio.wait_for(_wait_for_result(), timeout=WAIT_FOR_RESULT_TIMEOUT_S)
+            doc = await asyncio.wait_for(_wait(), timeout=WAIT_FOR_RESULT_TIMEOUT_S)
         except asyncio.TimeoutError:
-            log.warning("finalize timed out for session=%s", self._session_id)
-            return "I couldn't finalise in time. The wrap view on screen has what's done so far."
+            return "I couldn't finalise in time."
 
-        payload = doc.get("payload", {})
-        actions = payload.get("action_items", [])
+        p = doc.get("payload", {})
+        actions = p.get("action_items", [])
         if not actions:
-            return "No action items captured. Note is on screen."
-        action_text = "; ".join(actions[:3])
-        return f"Three things to action: {action_text}."
-
-
-def _build_agent(
-    mode: str,
-    *,
-    chat_ctx: ChatContext,
-    workspace: Workspace,
-    session_id: str,
-    hcp_id: str,
-) -> Agent:
-    if mode == constants.CALL_MODE_PRE:
-        return PreCallAgent(
-            chat_ctx=chat_ctx, workspace=workspace, session_id=session_id, hcp_id=hcp_id
+            return "Wrap done. No action items captured."
+        return "Three things to action. " + " ".join(
+            f"{i + 1}. {a}" for i, a in enumerate(actions[:3])
         )
-    if mode == constants.CALL_MODE_DURING:
-        return DuringCallAgent(
-            chat_ctx=chat_ctx, workspace=workspace, session_id=session_id, hcp_id=hcp_id
-        )
-    if mode == constants.CALL_MODE_POST:
-        return PostCallAgent(
-            chat_ctx=chat_ctx, workspace=workspace, session_id=session_id, hcp_id=hcp_id
-        )
-    raise ValueError(f"unknown mode: {mode}")
 
 
 server = AgentServer()
@@ -246,35 +216,31 @@ def prewarm(proc: JobProcess) -> None:
 server.setup_fnc = prewarm
 
 
-@server.rtc_session(agent_name="field-companion-agent")
+@server.rtc_session(agent_name="my-agent")
 async def field_companion_session(ctx: JobContext) -> None:
     ctx.log_context_fields = {"room": ctx.room.name}
+    await ctx.connect()
     await start_background_agents()
 
-    meta: dict[str, str] = {}
-    if ctx.job.metadata:
-        try:
-            meta = json.loads(ctx.job.metadata)
-        except json.JSONDecodeError:
-            log.warning("ctx.job.metadata was not valid JSON; using defaults")
+    # The frontend stuffs {mode, hcp_id, session_id, ...} as JSON into the
+    # RoomAgentDispatch metadata. Read the unsuffixed session_id from here so
+    # the workspace bus correlates with what the API/views poll for.
+    raw_metadata = ctx.job.metadata or "{}"
+    try:
+        meta = json.loads(raw_metadata)
+    except json.JSONDecodeError:
+        log.warning("failed to parse job metadata: %r", raw_metadata)
+        meta = {}
 
-    mode = meta.get("mode", DEFAULT_MODE)
-    rep_id = meta.get("rep_id", DEFAULT_REP_ID)
-    hcp_id = meta.get("hcp_id", DEFAULT_HCP_ID)
-    session_id = meta.get("session_id", ctx.room.name)
-
-    log.info(
-        "starting field companion session mode=%s rep=%s hcp=%s session=%s",
-        mode, rep_id, hcp_id, session_id,
-    )
+    session_id = meta.get("session_id") or ctx.room.name
+    hcp_id = meta.get("hcp_id") or DEFAULT_HCP_ID
+    mode = meta.get("mode") or "pre_call"
 
     workspace = Workspace()
     chat_ctx = ChatContext()
 
     voice_id = os.environ.get("ELEVENLABS_VOICE_ID")
-    tts: Optional[Any] = None
-    if voice_id:
-        tts = elevenlabs.TTS(voice_id=voice_id)
+    tts: Optional[Any] = elevenlabs.TTS(voice_id=voice_id) if voice_id else None
 
     session = AgentSession(
         stt=deepgram.STT(model="nova-3"),
@@ -282,18 +248,18 @@ async def field_companion_session(ctx: JobContext) -> None:
         tts=tts,
         vad=ctx.proc.userdata["vad"],
         turn_handling=TurnHandlingOptions(
-        turn_detection=MultilingualModel(),
+            turn_detection=MultilingualModel(),
             preemptive_generation={"enabled": False},
         ),
     )
 
     await session.start(
-        agent=_build_agent(
-            mode,
+        agent=FieldCompanionAgent(
             chat_ctx=chat_ctx,
             workspace=workspace,
             session_id=session_id,
             hcp_id=hcp_id,
+            mode=mode,
         ),
         room=ctx.room,
         room_options=room_io.RoomOptions(
@@ -304,7 +270,6 @@ async def field_companion_session(ctx: JobContext) -> None:
             ),
         ),
     )
-    await ctx.connect()
 
 
 if __name__ == "__main__":
