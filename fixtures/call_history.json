@@ -1,0 +1,66 @@
+[
+  {
+    "_id": "ch_rose_001",
+    "hcp_id": "hcp_rose",
+    "interaction_date": "2026-04-15T14:00:00Z",
+    "topic": "efficacy",
+    "text": "Dr Rose pushed back on the AURORA-2 PFS benefit, citing the open-label design and asking whether the investigator-assessed primary endpoint had been blindly adjudicated. She acknowledged the hazard ratio was clinically meaningful but said she wanted to see independent review committee data before changing her referral patterns.",
+    "embedding": []
+  },
+  {
+    "_id": "ch_rose_002",
+    "hcp_id": "hcp_rose",
+    "interaction_date": "2026-04-15T14:00:00Z",
+    "topic": "safety",
+    "text": "Dr Rose raised a specific concern about cytopenia management in patients over 70, mentioning that two of her own Lymvora patients required dose reductions in the first eight weeks. She wants real-world data on the proportion of older patients who maintain the 320mg dose at six months.",
+    "embedding": []
+  },
+  {
+    "_id": "ch_rose_003",
+    "hcp_id": "hcp_rose",
+    "interaction_date": "2026-04-15T14:00:00Z",
+    "topic": "clinical_practice",
+    "text": "Dr Rose described her sequencing logic for relapsed DLBCL: CAR-T referral first for transplant-eligible fit patients, Lymvora considered for transplant-ineligible cases or post-CAR-T relapse. She said she would not use Lymvora before exhausting CAR-T eligibility assessment.",
+    "embedding": []
+  },
+  {
+    "_id": "ch_rose_004",
+    "hcp_id": "hcp_rose",
+    "interaction_date": "2026-03-10T11:30:00Z",
+    "topic": "off_label_pressure",
+    "text": "Dr Rose mentioned that two younger patients had asked her about Lymvora as a first-line option after reading about it online. She said she had explained the indication and the lack of first-line evidence, but flagged that this kind of patient-driven pressure was becoming more common with newer agents.",
+    "embedding": []
+  },
+  {
+    "_id": "ch_rose_005",
+    "hcp_id": "hcp_rose",
+    "interaction_date": "2026-03-10T11:30:00Z",
+    "topic": "evidence_gaps",
+    "text": "Dr Rose said she would value head-to-head data against Pola-BR rather than the investigator's-choice comparator used in AURORA-2. She acknowledged a head-to-head trial may not be commercially feasible but wanted the company position on real-world comparative effectiveness studies.",
+    "embedding": []
+  },
+  {
+    "_id": "ch_rose_006",
+    "hcp_id": "hcp_rose",
+    "interaction_date": "2026-02-20T09:45:00Z",
+    "topic": "trial_recruitment",
+    "text": "Dr Rose asked about ongoing trials of vorabrutinib in combination regimens, specifically with anti-CD20 agents. She said the Royal Marsden would consider opening a site for any phase 3 combination study with a pragmatic design.",
+    "embedding": []
+  },
+  {
+    "_id": "ch_rose_007",
+    "hcp_id": "hcp_rose",
+    "interaction_date": "2026-02-20T09:45:00Z",
+    "topic": "safety",
+    "text": "Dr Rose noted she had not personally seen atrial fibrillation events on Lymvora but said the BTKi class effect made her cautious about the cardiac history of any patient over 65. She routinely orders a baseline ECG and echo before initiation.",
+    "embedding": []
+  },
+  {
+    "_id": "ch_rose_008",
+    "hcp_id": "hcp_rose",
+    "interaction_date": "2026-01-12T15:15:00Z",
+    "topic": "formulary_access",
+    "text": "Dr Rose confirmed Lymvora was on the Royal Marsden formulary for the licensed indication and that NHS England commissioning had been straightforward for her r/r DLBCL patients. She mentioned that some regional centres were reporting delays and she had been asked for advice on the funding pathway.",
+    "embedding": []
+  }
+]

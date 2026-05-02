@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Node
+node_modules/
+.next/
+out/
+.turbo/
+
+# Env files — never commit real keys
+.env
+.env.local
+.env.*.local
+agent-py/.env
+agent-py/.env.local
+frontend/.env.local
+
+# Allow examples
+!.env.example
+!agent-py/.env.example
+!frontend/.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log

@@ -1,0 +1,110 @@
+[
+  {
+    "_id": "hcp_rose",
+    "full_name": "Dr Eleanor Rose",
+    "title": "Consultant Medical Oncologist",
+    "honorific": "Dr",
+    "affiliation": {
+      "trust": "Royal Marsden NHS Foundation Trust",
+      "site": "Sutton",
+      "academic": "Honorary Senior Lecturer, Institute of Cancer Research"
+    },
+    "subspecialty": "Lymphoma (DLBCL focus)",
+    "qualifications": ["MBBS", "MRCP", "FRCPath", "PhD"],
+    "years_in_post": 11,
+    "next_call": {
+      "scheduled_at": "2026-05-02T14:00:00Z",
+      "location": "Royal Marsden Sutton, Outpatient Block, Room 4",
+      "topic": "Lymvora — second-line evidence update and prescribing experience",
+      "duration_minutes": 25
+    },
+    "communication_style": {
+      "preference": "data-led, expects primary endpoint figures and HRs to hand",
+      "tolerance_for_marketing": "low",
+      "preferred_evidence": ["randomised phase 3 data", "subgroup forest plots", "long-term follow-up"],
+      "watch_outs": "Will ph back if presented with cross-trial comparisons or post-hoc subgroup analyses framed as conclusive."
+    },
+    "prescribing_pattern": {
+      "lymvora_status": "prescribed in 6 patients since UK launch, all second-line+",
+      "preferred_regimens_dlbcl_first_line": "R-CHOP, with Pola-R-CHP for IPI 2+",
+      "preferred_regimens_dlbcl_second_line": "Pola-BR or CAR-T referral where eligible; Lymvora considered for transplant-ineligible relapsed cases",
+      "notes": "Tertiary centre patient mix skews to harder-to-treat relapses; outcomes data from her practice are not directly comparable to community oncology."
+    },
+    "key_concerns": [
+      "Cytopenia management in patients aged 70+",
+      "Sequencing Lymvora vs CAR-T referral pathway",
+      "Real-world tolerability vs registrational trial population",
+      "Off-label pressure from younger fit patients seeking newer agents"
+    ],
+    "publications_recent": [
+      {
+        "title": "Real-world outcomes with second-line therapies in transplant-ineligible relapsed DLBCL",
+        "venue": "British Journal of Haematology",
+        "year": 2025,
+        "role": "senior author"
+      },
+      {
+        "title": "Cytopenia patterns in older patients receiving novel-targeted therapies for aggressive lymphoma",
+        "venue": "Haematologica",
+        "year": 2024,
+        "role": "co-author"
+      }
+    ],
+    "consent": {
+      "audio_recording": true,
+      "consent_recorded_at": "2026-04-15T09:32:00Z",
+      "compliance_basis": "ABPI Code 2024 — written prior consent on file"
+    },
+    "tags": ["lymphoma", "dlbcl", "tertiary_centre", "kol_tier_2"]
+  },
+  {
+    "_id": "hcp_holloway",
+    "full_name": "Dr Marcus Holloway",
+    "title": "Consultant Haematologist",
+    "honorific": "Dr",
+    "affiliation": {
+      "trust": "University Hospitals Birmingham NHS Foundation Trust",
+      "site": "Queen Elizabeth Hospital Birmingham",
+      "academic": null
+    },
+    "subspecialty": "Haematology — aggressive lymphomas",
+    "qualifications": ["MBChB", "MRCP", "FRCPath"],
+    "years_in_post": 7,
+    "next_call": {
+      "scheduled_at": "2026-05-05T11:30:00Z",
+      "location": "QEHB, Haematology Day Unit",
+      "topic": "Routine update — Lymvora",
+      "duration_minutes": 20
+    },
+    "communication_style": {
+      "preference": "concise, prefers takeaway summaries",
+      "tolerance_for_marketing": "moderate"
+    },
+    "tags": ["lymphoma", "regional_centre"]
+  },
+  {
+    "_id": "hcp_bhattacharya",
+    "full_name": "Dr Priya Bhattacharya",
+    "title": "Consultant Medical Oncologist",
+    "honorific": "Dr",
+    "affiliation": {
+      "trust": "The Christie NHS Foundation Trust",
+      "site": "Manchester",
+      "academic": "Honorary Senior Lecturer, University of Manchester"
+    },
+    "subspecialty": "Lymphoma and CLL",
+    "qualifications": ["MBBS", "MRCP", "PhD"],
+    "years_in_post": 9,
+    "next_call": {
+      "scheduled_at": "2026-05-06T15:00:00Z",
+      "location": "The Christie, Manchester",
+      "topic": "Initial Lymvora discussion",
+      "duration_minutes": 30
+    },
+    "communication_style": {
+      "preference": "trial-pipeline focused",
+      "tolerance_for_marketing": "low"
+    },
+    "tags": ["lymphoma", "tertiary_centre"]
+  }
+]

@@ -1,0 +1,75 @@
+[
+  {
+    "_id": "prod_lymvora",
+    "brand_name": "Lymvora",
+    "inn": "vorabrutinib",
+    "drug_class": "Bruton's tyrosine kinase (BTK) inhibitor, second-generation covalent",
+    "marketing_authorisation_holder": "Sentralis Oncology UK Ltd",
+    "ma_number": "PLGB 51234/0001",
+    "regulatory_status": {
+      "authority": "MHRA",
+      "authorised": true,
+      "authorisation_type": "Marketing Authorisation under the assessment route",
+      "first_authorised": "2024-09-12",
+      "abpi_code_version": "2024"
+    },
+    "licensed_indication": {
+      "summary": "Lymvora is indicated as monotherapy for the treatment of adult patients with relapsed or refractory diffuse large B-cell lymphoma (DLBCL) who have received at least one prior systemic therapy and who are not candidates for, or have relapsed after, autologous stem cell transplantation.",
+      "line_of_therapy": "second-line and beyond",
+      "patient_population": "adults with relapsed/refractory DLBCL after at least one prior systemic therapy",
+      "explicit_exclusions": [
+        "First-line treatment of DLBCL — NOT indicated",
+        "Treatment-naive patients — NOT indicated",
+        "Indolent lymphomas (follicular, marginal zone) — outside indication",
+        "Paediatric population (<18 years) — not studied"
+      ]
+    },
+    "dosing": {
+      "standard_dose": "320 mg orally once daily",
+      "modifications": "Dose reduction to 240 mg or 160 mg permitted for grade 3+ haematological toxicity per SmPC section 4.2",
+      "duration": "Until disease progression or unacceptable toxicity"
+    },
+    "key_safety": {
+      "very_common_adverse_events": [
+        "Neutropenia (any grade ~38%, grade 3+ ~21%)",
+        "Thrombocytopenia (any grade ~24%, grade 3+ ~9%)",
+        "Diarrhoea (~22%)",
+        "Fatigue (~19%)",
+        "Upper respiratory tract infection (~17%)"
+      ],
+      "serious_adverse_events_of_interest": [
+        "Severe neutropenia with risk of febrile neutropenia and hospitalisation",
+        "Atrial fibrillation (class effect for BTK inhibitors)",
+        "Major haemorrhage in patients on concurrent anticoagulation",
+        "Opportunistic infections including PJP and HBV reactivation"
+      ],
+      "contraindications": [
+        "Hypersensitivity to vorabrutinib or any excipient",
+        "Severe hepatic impairment (Child-Pugh C)"
+      ],
+      "warnings_and_precautions": "FBC monitoring weekly for first 8 weeks then monthly. PJP prophylaxis recommended. Cardiac history review prior to initiation."
+    },
+    "pivotal_trial": {
+      "name": "AURORA-2",
+      "phase": 3,
+      "design": "Randomised, open-label, active-control vs investigator's choice (Pola-BR or R-GemOx)",
+      "population": "Adults with relapsed/refractory DLBCL after >=1 prior line, ASCT-ineligible or post-ASCT relapse",
+      "n_randomised": 412,
+      "primary_endpoint": "Progression-free survival (investigator-assessed)",
+      "primary_result": "Median PFS 11.4 months vs 6.2 months (HR 0.58, 95% CI 0.45-0.74, p<0.001)",
+      "secondary_endpoints": [
+        "Overall survival (data immature at primary analysis)",
+        "Overall response rate (62% vs 41%)",
+        "Complete response rate (34% vs 19%)"
+      ],
+      "publication": "AURORA-2 primary analysis, Lancet Oncology, March 2024"
+    },
+    "abpi_compliance_notes": {
+      "promotional_use": "May only be promoted within terms of the licensed indication (ABPI Code Clause 11.1)",
+      "off_label_promotion_prohibited": "Promotion or solicitation of use outside the second-line+ R/R DLBCL indication is a Clause 11.2 breach",
+      "unsolicited_off_label_questions": "May be answered factually with explicit acknowledgement that the use discussed falls outside the licensed indication; should be referred to medical information for full data response.",
+      "first_line_promotion": "EXPLICITLY OFF-LABEL — any promotional discussion of first-line use is a clear Clause 11.2 trigger"
+    },
+    "tags": ["btki", "dlbcl", "second_line", "oncology", "haematology"]
+  }
+]
